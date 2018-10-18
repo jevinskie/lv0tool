@@ -11,13 +11,16 @@ uint32_t round_up(uint32_t x, uint32_t n)
 int read_entire_file(const char *file_path, void **data, uint32_t *size, uint32_t roundup)
 {
 	FILE *fp = NULL;
-	struct _stat st = {0};
+	struct stat st = {0};
 	void *ptr = NULL;
 	uint32_t length = 0;
 
-	if (_stat(file_path, &st) != -1)
+	if (stat(file_path, &st) != -1) {
 		length = st.st_size;
+		printf("%s length: %lld\n", file_path, st.st_size);
+	}
 	else {
+		printf("bad stat %s\n", file_path);
 		*data = NULL;
 		*size = 0;
 		return -EFAULT;

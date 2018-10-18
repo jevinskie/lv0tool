@@ -1,6 +1,6 @@
 CC=gcc
 STRIP=strip
-CFLAGS=-O2 -Wall
+CFLAGS=-O2 -Wall -std=gnu11
 LDFLAGS=
 LIBS=
 
@@ -9,7 +9,7 @@ all: lv0tool
 
 lv0tool: main.o crypt.o tables.o util.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) $^ -o $@
-	$(STRIP) -s $@
+	# $(STRIP) -s $@
 
 crypt.o: crypt.c
 	$(CC) $(CFLAGS) -DCRYPTO_PPU -c $< -o $@

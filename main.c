@@ -10,10 +10,12 @@
 #include "crypt.h"
 #include "util.h"
 #include "tables.h"
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <string.h>
 
 
 #define DEFAULT_FILENAME	"lv0.elf"
-#define DEFAULT_FILEPATH	".\\"
+#define DEFAULT_FILEPATH	"."
 
 
 #define ELF_HEADER_SIG		0x7f454c46
@@ -82,7 +84,7 @@ void extract_ldrs(uint8_t *in, uint32_t size, char* szFilePath)
 			ldr_size = (uint32_t)(be64(in+i+0x10) + be64(in+i+0x18));
 			printf("exported ldr:%s at 0x%x size 0x%x bytes\n", g_pszLdrNames[ldr], i, ldr_size);
 			
-			sprintf_s(szOutFileName, MAX_PATH, "%s\\%s", szFilePath, g_pszLdrNames[ldr]);
+			snprintf(szOutFileName, MAX_PATH, "%s/%s", szFilePath, g_pszLdrNames[ldr]);
 			write_file(szOutFileName, in+i, ldr_size);
 			ldr++;
 		}
@@ -112,8 +114,8 @@ uint32_t import_ldrs(uint8_t *in, uint8_t *out, uint32_t lv0_size, char* szInPat
 	{
 		if(be32(in+i) == SELF_HEADER_SIG)
 		{			
-			//sprintf_s(name, MAX_PATH, "ldr_%i", j);
-			sprintf_s(szInFileName, MAX_PATH, "%s\\%s", szInPath, g_pszLdrNames[found]);
+			//snprintf(name, MAX_PATH, "ldr_%i", j);
+			snprintf(szInFileName, MAX_PATH, "%s/%s", szInPath, g_pszLdrNames[found]);
 
 			// calculate the current size of the ldr in this slot, 
 			// and the current auth_id
@@ -285,10 +287,10 @@ int __cdecl main(int argc, char *argv[])
 
 
 	/// default arguments
-	strcpy_s(szOption, MAX_PATH, "export");
-	strcpy_s(szLV1Crypt, MAX_PATH, "yes");
-	strcpy_s(szFileName, MAX_PATH, DEFAULT_FILENAME);
-	strcpy_s(szFilePath, MAX_PATH, DEFAULT_FILEPATH);
+	strcpy(szOption, "export");
+	strcpy(szLV1Crypt, "yes");
+	strcpy(szFileName, DEFAULT_FILENAME);
+	strcpy(szFilePath, DEFAULT_FILEPATH);
 	bDoExtract = TRUE;
 	bDoLV1Crypt = TRUE;
 	bDoCleanup = FALSE;
@@ -308,10 +310,10 @@ int __cdecl main(int argc, char *argv[])
 				if ( argv[i+1][0] == '-' )
 					usage("-option");
 
-				strcpy_s(szOption, MAX_PATH, argv[i+1]);
-				if ( _stricmp(szOption, "export") == 0 )
+				strcpy(szOption, argv[i+1]);
+				if ( strcmp(szOption, "export") == 0 )
 					bDoExtract = TRUE;
-				else if ( _stricmp(szOption, "import") == 0 )
+				else if ( strcmp(szOption, "import") == 0 )
 					bDoExtract = FALSE;
 				else
 					usage("-option");
@@ -327,7 +329,7 @@ int __cdecl main(int argc, char *argv[])
 				if ( (argv[i+1][0] == '-') || (strlen(argv[i+1]) <= 1) )
 					usage("-filename");
 
-				strcpy_s(szFileName, MAX_PATH, argv[i+1]);				
+				strcpy(szFileName, argv[i+1]);				
 				i++;
 				break;
 
@@ -339,7 +341,7 @@ int __cdecl main(int argc, char *argv[])
 				if ( (argv[i+1][0] == '-') || (strlen(argv[i+1]) <= 1) )
 					usage("-filepath");
 
-				strcpy_s(szFilePath, MAX_PATH, argv[i+1]);				
+				strcpy(szFilePath, argv[i+1]);				
 				i++;
 				break;
 
@@ -353,10 +355,10 @@ int __cdecl main(int argc, char *argv[])
 				if ( argv[i+1][0] == '-' )
 					usage("-lv1crypt");
 
-				strcpy_s(szLV1Crypt, MAX_PATH, argv[i+1]);
-				if ( _stricmp(szLV1Crypt, "yes") == 0 )
+				strcpy(szLV1Crypt, argv[i+1]);
+				if ( strcmp(szLV1Crypt, "yes") == 0 )
 					bDoLV1Crypt = TRUE;
-				else if ( _stricmp(szLV1Crypt, "no") == 0 )
+				else if ( strcmp(szLV1Crypt, "no") == 0 )
 					bDoLV1Crypt = FALSE;
 				else
 					usage("-lv1crypt");
@@ -373,10 +375,10 @@ int __cdecl main(int argc, char *argv[])
 				if ( argv[i+1][0] == '-' )
 					usage("-cleanup");
 
-				strcpy_s(szDoCleanup, MAX_PATH, argv[i+1]);
-				if ( _stricmp(szDoCleanup, "yes") == 0 )
+				strcpy(szDoCleanup, argv[i+1]);
+				if ( strcmp(szDoCleanup, "yes") == 0 )
 					bDoCleanup = TRUE;
-				else if ( _stricmp(szDoCleanup, "no") == 0 )
+				else if ( strcmp(szDoCleanup, "no") == 0 )
 					bDoCleanup = FALSE;
 				else
 					usage("-cleanup");
@@ -398,7 +400,7 @@ int __cdecl main(int argc, char *argv[])
 		usage("-option");
 		
 	//load lv0.elf
-	if ( sprintf_s(szFullFileName, MAX_PATH, "%s\\%s", szFilePath, szFileName) <= 0)
+	if ( snprintf(szFullFileName, MAX_PATH, "%s/%s", szFilePath, szFileName) <= 0)
 		goto exit;	
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -492,11 +494,11 @@ int __cdecl main(int argc, char *argv[])
 			pTempLdr = (uint8_t*)calloc(lv1ldr_cryptsize, sizeof(char));
 
 			// copy the lv1ldr to a temp buffer, and crypt it, then 			
-			memcpy_s(pTempLdr, lv1ldr_cryptsize, lv1ldr_out, lv1ldr_actualsize);
+			memcpy(pTempLdr, lv1ldr_out, lv1ldr_cryptsize);
 			crypt_lv1ldr(pTempLdr, lv1ldr_cryptsize, erk, riv);
 
 			// copy back into the output file
-			memcpy_s(lv1ldr_out, lv1ldr_actualsize, pTempLdr, lv1ldr_actualsize);			
+			memcpy(lv1ldr_out, pTempLdr, lv1ldr_actualsize);			
 			printf("\t*** lv1ldr set to ENCRYPTED (size:0x%x) ***\n", lv1ldr_actualsize);
 		}
 		else
@@ -510,8 +512,8 @@ int __cdecl main(int argc, char *argv[])
 		if (bDoCleanup == TRUE)
 		{
 			for (i = 0; i < NUM_EMBEDDED_LDRS; i++) {
-				sprintf_s(szFullFileName, MAX_PATH, "%s\\%s", szFilePath, g_pszLdrNames[i]);
-				DeleteFileA(szFullFileName);	
+				snprintf(szFullFileName, MAX_PATH, "%s/%s", szFilePath, g_pszLdrNames[i]);
+				unlink(szFullFileName);	
 			}
 		}		
 	} // end import_ldrs
